@@ -1,0 +1,103 @@
+/-------------------------------------------------------
+/       CYLON PANEL LIGHTS
+/	SETS SPEED WITH VALUES IN THE SWITCH REGISTER
+/-------------------------------------------------------
+        *200
+        MONADR=7600     /RETURN ADDRESS
+        CNESC=-0033     /NEGATIVE ESC VALUE 6-BIT
+START,  CLA CLL
+        TAD     MSGADR  /LOAD MSG ON HOW TO EXIT
+        JMS     PRINT   /PRINT IT
+        KCF             /CLEAR KEYBOARD FLAG
+LOOP,   KSF             /WAIT FOR INPUT
+        JMP     GTNEW   /GET NEW NUMBER
+        KRB             /READ KEYBOARD
+        TAD     (CNESC  /ADD NEGATIVE ESC VALUE
+        SNA             /SKIP NEXT IF NOT ESC
+        JMP I   (MONADR /RETURN TO OS
+        JMP     LOOP    /BAD KEY, LOOP AGAIN
+
+/ WAIT LOOP
+GTNEW,  JMS     CYLON   /GET NEXT CYLON NUMBER
+WAIT1,  ISZ     COUNT1  /INCREMENT COUNTER
+        JMP     WAIT2   /STEP COUNTER
+        JMP     RESET   /RESET COUNTER
+WAIT2,  ISZ     COUNT2  /STEP COUNTER 2
+        JMP     WAIT2   /STEP COUNTER
+        JMP     WAIT1   /NEXT COUNT
+RESET,  DCA     ACTMP   /STORE AC
+	OSR		/GET SWITCH REGISTER
+        DCA     COUNT1  /SET IT IN COUNT
+        TAD     ACTMP   /RESTORE AC
+        JMP     LOOP    /GET NEXT CHARACTER
+COUNT1, 7700            /COUNTER VARIABLE
+COUNT2, 0               /COUNTER VARIABLE
+ACTMP,  0
+
+MSGADR, MSG
+MSG,    0215;0212;"E;"S;"C;" ;"T;"O;" ;"S;"T;"O;"P;">;0;
+
+CYLON,  0
+        CLA CLL
+	TAD	DIRFLG	/GET DIRECTION
+	SZA		
+	JMP	RIGHT	/RIGHT FLASH ON 1 DIRFLG
+
+	CLA CLL		/CLEAR AC
+        TAD     ACVAR
+        RAL
+        SZL             /SKIP NEXT IF LINK N!=0
+	JMP	FULSL	/FULL SCALE LEFT
+        DCA     ACVAR
+        TAD     ACVAR
+        JMP I   CYLON
+FULSL,	CLA CLL		/IF FULL SCALE LEFT
+	TAD	(4000
+	DCA	ACVAR
+	TAD	ACVAR
+	JMP	FLIP	/FLIP DIRFLG
+
+RIGHT,	CLA CLL
+	TAD	ACVAR	/GET AC VALUE
+	RAR		/ROTATE IT RIGHT
+	SNA		/SKIP AC !=0
+	JMP	FULSR	/FULL SCALE RIGHT
+	DCA	ACVAR
+	TAD	ACVAR
+	JMP I	CYLON
+FULSR,	CLA CLL
+	TAD	(0001
+	DCA	ACVAR
+	TAD	ACVAR
+	JMP	FLIP
+
+FLIP,	CLA CLL
+	TAD	DIRFLG
+	CMA		/COMPLEMENT IT
+	DCA	DIRFLG
+	CLA CLL
+	TAD	ACVAR	/RESTORE THE AC
+	JMP I	CYLON
+ACVAR,  0001
+DIRFLG,	0000
+        
+/-------------------------------------------------------
+/       PRINT
+/       EXPECTS NULL-TERMINATED BUFFER IN AC
+/-------------------------------------------------------
+
+PRINT,  0
+        DCA     PBUFF   /SET POINTER BUFFER
+        TLS             /LOAD TELEPRINTER
+NEXT,   TSF             /SKIP IF FLAG = 1 (CHAR PRINTED)
+        JMP     .-1     /WAIT LOOP
+        TAD I   PBUFF   /AC TO BUFFER
+        TLS             /LOAD TELEPRINTER
+        ISZ     PBUFF   /INCREMENT BUFFER POINTER
+        CLA             CLL
+        TAD I   PBUFF   /NEXT CHAR IN BUFFER TO ACPNTR
+        SZA             CLA
+        JMP             NEXT
+        JMP I   PRINT
+PBUFF,  0               /POINTER BUFFER
+
