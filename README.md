@@ -5,4 +5,7 @@ I built one of 2015 versions of the [PiDP-8/I](https://obsolescence.wixsite.com/
 
 This is some code to run on it.
 
+This is a (re-)learning process, expect errors and inefficiencies.
+
+
 
