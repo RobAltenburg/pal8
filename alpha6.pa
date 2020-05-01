@@ -1,0 +1,72 @@
+/-------------------------------------------------------
+/       ALPHA6
+/       PRINT STRING OF PACKED 6-BIT CHARACTERS
+/-------------------------------------------------------
+        *200
+        MONADR=7600
+START,  CLA CLL
+LOOP,	TAD I	MSGPTR	/---- FIRST CHARACTER
+	BSW		/BYTE SWAP
+	DCA	TMP	/SAVE IT
+	TAD	TMP
+	JMS	SIX28	/CONVERT TO 8-BIT
+        JMS     PRINT   /PRINT THE CHARACTER
+	CLA		/---- SECOND CHARACTER
+	TAD	TMP	/RESTORE
+	BSW
+	AND	(0077	/ISOLATE 
+	DCA	TMP	/STORE IT
+	TAD	TMP
+	SZA		/IF NOT ZERO...
+	JMP	NORMAL	/... CONTINUE
+	TAD	MSGPTR	/ELSE...
+	TAD	(0001	/LOOK AT NEXT CHARACTER
+	DCA	TMP2	/SAVE NEW PTR IN TMP2	
+	TAD I	TMP2	/LOOK AT THE VALUE
+	SNA CLA		/IF IT'S A ZERO
+	JMP	DONE	/WE ARE DONE
+NORMAL,	CLA
+	TAD	TMP
+	JMS	SIX28
+	JMS	PRINT
+	CLA	
+	ISZ	MSGPTR	
+	NOP
+	TAD I	MSGPTR	/LOOK AT NEXT CHAR
+	SNA CLA		/IF IT'S ZERO...
+        JMP	DONE	/WE ARE DONE
+	JMP	LOOP	/ELSE GET NEXT CHAR
+
+DONE,	JMP I MON
+
+TMP,	0
+TMP2,	0
+MON,    MONADR          /LOCATION TO RETURN
+MSGPTR, MSG
+MSG,    TEXT "HELLO WORLD"
+	0
+
+/-------------------------------------------------------
+/       CONVERT SIX BIT TO 8 BIT ASCII
+/-------------------------------------------------------
+SIX28,	0
+	AND	(0077	/ISOLATE LOW 3
+	DCA	STMP	/STORE IT
+	TAD	STMP
+	AND	(0040	/IF THIS BIT ISN'T SET...
+	SNA CLA			
+	TAD	(0100	/... ADD 0100...
+	TAD	STMP	/... TO THE CODE, THEN...
+	TAD	(200	/IN EITHER CASE, ADD 0200
+	JMP I	SIX28	/AND RETURN
+STMP,	0
+
+/-------------------------------------------------------
+/       PRINT SINGLE CHARACTER
+/-------------------------------------------------------
+PRINT,  0
+        TLS             /LOAD TELEPRINTER
+	TSF             /SKIP IF FLAG = 1 (CHAR PRINTED)
+        JMP     .-1     /WAIT LOOP
+        JMP I	PRINT
+
