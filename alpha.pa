@@ -1,6 +1,7 @@
 /-------------------------------------------------------
 /       ALPHA
-/       TEST KEYBOARD INPUT
+/       READ KEYBOARD INPUT AND PRINT ASCII CODE 
+/	IN OCTAL
 /       USES PDP-8/E BSW
 /-------------------------------------------------------
         *200
@@ -12,17 +13,14 @@ START,  CLA CLL
 LOOP,   KSF             /WAIT FOR INPUT
         JMP     .-1     /LOOP
         KRB             /READ KEYBOARD
-        TAD     CNESC   /ADD NEGATIVE ESC VALUE
+        TAD     (-0033  /ADD NEGATIVE ESC 6-BIT VALUE
         SNA             /SKIP NEXT IF NOT ESC
-        JMP I   MON     /RETURN TO OS
-        TAD     ADJUST  /RESTORE AC AND MAKE 8 BIT
+        JMP I   (MONADR /RETURN TO OS
+        TAD     (0233	/ESC + 200 FOR 6 TO 8 BIT ASCII
         JMS     ATOC    /CONVERT AND ASCII IN BUFF AT AC
         JMS     PRINT   /PRINT THE VALUE
         JMP     LOOP    /GET NEXT CHAR
-ADJUST, 0233            /ESC + 200 FOR 6 TO 8 BIT ASCII
-CNESC,  -0033           /NEGATIVE ESCAPE 6-BIT CODE
 MSGADR, MSG
-MON,    MONADR          /LOCATION TO RETURN
 MSG,    0215;0212;
         "T;"Y;"P;"E;" ;"S;"O;"M;"E;"T;"H;"I;"N;"G;":;0;
 
@@ -63,26 +61,24 @@ ATOC,   0
         JMS     PROC    /FINAL LOW 3
         CLA CLL         /CLEAR AC AND LINK
         DCA I	PNTR	/ADD A ZERO AT THE END
-        TAD		BUFFAD	/PUT THE BUFFER ADDR IN AC
+        TAD	BUFFAD	/PUT THE BUFFER ADDR IN AC
         JMP I	ATOC	/RETURN
 
 /CONVERT VALUE IN AC TO ASCII, STORE IT, AND INC POINTER
 PROC,   0
-        AND     C0007   /ISOLATE LOW 3 BITS
-        TAD     C0260   /ADD 260 TO MAKE ASCII
+        AND     (0007   /ISOLATE LOW 3 BITS
+        TAD     ("0	/ADD 260 TO MAKE ASCII
         DCA I	PNTR	/PUT VALUE AT PNTR
-        ISZ		PNTR	/INCREMENT PTR
+        ISZ	PNTR	/INCREMENT PTR
         NOP
         CLA CLL         /CLEAR AC
-        TAD		VAR		/RESTORE AC
+        TAD	VAR	/RESTORE AC
         JMP I	PROC	/RETURN
 
-C0007,  0007			/BIT MASK FOR LOW 3 BITS
-C0260,  0260			/VALUE TO CONVERT NUMBER TO ASCII
 PNTR,   0               /POINTER
-VAR,    0				/TEMP VAR TO HOLD AC
-BUFFAD, BUFF			/ADDRESS OF BUFFER
-B2ADR,  BUF2			/ADDRESS AFTER CRLF
+VAR,    0		/TEMP VAR TO HOLD AC
+BUFFAD, BUFF		/ADDRESS OF BUFFER
+B2ADR,  BUF2		/ADDRESS AFTER CRLF
 BUFF,   0215            /CR
         0212            /LF
 BUF2,   0;0;0;0;0       /BUFFER FOR ASCII CHARACTER
