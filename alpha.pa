@@ -16,12 +16,12 @@ LOOP,   KSF             /WAIT FOR INPUT
         TAD     (-0033  /ADD NEGATIVE ESC 6-BIT VALUE
         SNA             /SKIP NEXT IF NOT ESC
         JMP I   (MONADR /RETURN TO OS
-        TAD     (0233	/ESC + 200 FOR 6 TO 8 BIT ASCII
+        TAD     (0033	/ Add Escape Character back
         JMS     ATOC    /CONVERT AND ASCII IN BUFF AT AC
         JMS     PRINT   /PRINT THE VALUE
         JMP     LOOP    /GET NEXT CHAR
 MSGADR, MSG
-MSG,    0215;0212;
+MSG,    0015;0012;
         "T;"Y;"P;"E;" ;"S;"O;"M;"E;"T;"H;"I;"N;"G;":;0;
 
 /-------------------------------------------------------
@@ -79,7 +79,8 @@ PNTR,   0               /POINTER
 VAR,    0		/TEMP VAR TO HOLD AC
 BUFFAD, BUFF		/ADDRESS OF BUFFER
 B2ADR,  BUF2		/ADDRESS AFTER CRLF
-BUFF,   0215            /CR
-        0212            /LF
+BUFF,   0015            /CR
+        0012            /LF
 BUF2,   0;0;0;0;0       /BUFFER FOR ASCII CHARACTER
+
 
