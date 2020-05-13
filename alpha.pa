@@ -1,56 +1,61 @@
+R PIP
+ATOC.PA<TTY:
 /-------------------------------------------------------
 /       ALPHA
-/       READ KEYBOARD INPUT AND PRINT ASCII CODE 
-/	IN OCTAL
-/       USES PDP-8/E BSW
+/       Read keyboard input and display the value in 
+/	octal.
 /-------------------------------------------------------
-        *200
+
+/--------------------Symbol Table
         MONADR=7600
-START,  CLA CLL
-        TAD     MSGADR  /LOAD MESSAGE
-        JMS     PRINT   /PRINT IT
-        KCF             /CLEAR KEYBOARD FLAG
-LOOP,   KSF             /WAIT FOR INPUT
-        JMP     .-1     /LOOP
-        KRB             /READ KEYBOARD
-        TAD     (-0033  /ADD NEGATIVE ESC 6-BIT VALUE
-        SNA             /SKIP NEXT IF NOT ESC
-        JMP I   (MONADR /RETURN TO OS
-        TAD     (0033	/ Add Escape Character back
-        JMS     ATOC    /CONVERT AND ASCII IN BUFF AT AC
-        JMS     PRINT   /PRINT THE VALUE
-        JMP     LOOP    /GET NEXT CHAR
-MSGADR, MSG
-MSG,    0015;0012;
-        "T;"Y;"P;"E;" ;"S;"O;"M;"E;"T;"H;"I;"N;"G;":;0;
+	SPACE=0040
+	CTLC=0003
+	CR=0015
+	LF=0012
+	GT=0076
+
+/--------------------Autoincrement buffer address
+	AIBUF=0010
+        
+	*200
+START,  CLA
+	TLS			/Initialize Printer
+	KCF
+LOOP,	TAD     MSG		/Load a message
+	JMS     PRINTB		/Print it
+	KSF			/WAIT FOR INPUT
+        JMP     .-1		/LOOP
+        KRB			/READ KEYBOARD
+        TAD     (-1^CTLC)	/ADD NEGATIVE ESC 6-BIT VALUE
+        SNA			/SKIP NEXT IF NOT ESC
+        JMP I   (MONADR)	/RETURN TO OS
+        TAD     (CTLC)		/ Add Escape Character back
+        JMS     ATOC		/CONVERT AND ASCII IN BUFF AT AC
+        JMP     LOOP		/GET NEXT CHAR
+
+MSG,    .;CR;LF;GT;SPACE;0 
 
 /-------------------------------------------------------
-/       PRINT
+/       PRINTB
 /       NULL-TERMINATED BUFFER IN AC
 /-------------------------------------------------------
-PRINT,  0
-        DCA     PBUFF   /SET POINTER BUFFER
-        TLS             /LOAD TELEPRINTER
-NEXT,   TSF             /SKIP IF FLAG = 1 (CHAR PRINTED)
-        JMP     .-1     /WAIT LOOP
-        TAD I   PBUFF   /AC TO BUFFER
-        TLS             /LOAD TELEPRINTER
-        ISZ     PBUFF   /INCREMENT BUFFER POINTER
-        CLA		CLL
-        TAD I   PBUFF   /NEXT CHAR IN BUFFER TO ACPNTR
-        SZA		CLA
-        JMP		NEXT
-        JMP I	PRINT
-PBUFF,  0               /POINTER BUFFER
+PRINTB, 0
+        DCA     AIBUF  /Set Pointer to AI Buff
+NEXT,   TAD I	AIBUF
+	SNA
+	JMP I	PRINTB	/ Exit on zero
+	TSF
+	JMP	.-1
+	TLS
+	CLA
+	JMP	NEXT
 
 /-------------------------------------------------------
-/ACCUMULATOR TO ASCII
+/	ACCUMULATOR TO ASCII
+/	Prints the AC, and sets AC to zero on return
 /-------------------------------------------------------
-
 ATOC,   0
         DCA     VAR     /MOVE AC TO VAR
-        TAD     B2ADR	/GET BUFFER ADDRESS
-        DCA     PNTR	/STORE IT IN THE POINTER
         TAD     VAR     /RESTORE THE AC
         RTL; RTL        /HIGH 3 BITS NOW LOW 3
         JMS     PROC    /PROCESS THE LOW 3
@@ -59,28 +64,19 @@ ATOC,   0
         RTR; RAR        /NEXT 3
         JMS     PROC	/PROCESS IT
         JMS     PROC    /FINAL LOW 3
-        CLA CLL         /CLEAR AC AND LINK
-        DCA I	PNTR	/ADD A ZERO AT THE END
-        TAD	BUFFAD	/PUT THE BUFFER ADDR IN AC
+        CLA	        /CLEAR AC AND LINK
         JMP I	ATOC	/RETURN
 
-/CONVERT VALUE IN AC TO ASCII, STORE IT, AND INC POINTER
+// Convert the AC to ASCII, Print, clear AC, and restore it
 PROC,   0
-        AND     (0007   /ISOLATE LOW 3 BITS
-        TAD     ("0	/ADD 260 TO MAKE ASCII
-        DCA I	PNTR	/PUT VALUE AT PNTR
-        ISZ	PNTR	/INCREMENT PTR
-        NOP
-        CLA CLL         /CLEAR AC
+        AND     (0007)  /ISOLATE LOW 3 BITS
+        TAD     ("0)	/ADD 260 TO MAKE ASCII
+	TSF		/Print it
+	JMP	.-1
+	TLS    
+	CLA
         TAD	VAR	/RESTORE AC
         JMP I	PROC	/RETURN
 
-PNTR,   0               /POINTER
 VAR,    0		/TEMP VAR TO HOLD AC
-BUFFAD, BUFF		/ADDRESS OF BUFFER
-B2ADR,  BUF2		/ADDRESS AFTER CRLF
-BUFF,   0015            /CR
-        0012            /LF
-BUF2,   0;0;0;0;0       /BUFFER FOR ASCII CHARACTER
-
 
