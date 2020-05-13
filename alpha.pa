@@ -1,5 +1,3 @@
-R PIP
-ATOC.PA<TTY:
 /-------------------------------------------------------
 /       ALPHA
 /       Read keyboard input and display the value in 
@@ -26,10 +24,10 @@ LOOP,	TAD     MSG		/Load a message
 	KSF			/WAIT FOR INPUT
         JMP     .-1		/LOOP
         KRB			/READ KEYBOARD
-        TAD     (-1^CTLC)	/ADD NEGATIVE ESC 6-BIT VALUE
+        TAD     (-1^CTLC)	/Add Negative Ctrl-C
         SNA			/SKIP NEXT IF NOT ESC
         JMP I   (MONADR)	/RETURN TO OS
-        TAD     (CTLC)		/ Add Escape Character back
+        TAD     (CTLC)		/Add Ctrl-C back
         JMS     ATOC		/CONVERT AND ASCII IN BUFF AT AC
         JMP     LOOP		/GET NEXT CHAR
 
