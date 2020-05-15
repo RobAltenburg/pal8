@@ -1,0 +1,107 @@
+R PIP
+FOO.PA<TTY:
+/ In this code, the first word of a buffer is its address so
+/ it can be entered directly into autoincrement addresses
+
+	MONADR=7600
+	IBSIZE=100 /Input Buffer Size
+	CR=0015
+	LF=0012
+
+	*0010
+AI1,	0
+
+	*200
+START,	CLA
+	TLS		
+	TAD	(">)
+	JMS	PUTCZ
+
+	TAD	BUFF	
+	JMS	GETLN
+
+	TAD	(CR)
+	JMS	PUTCZ
+	TAD	(LF)
+	JMS	PUTCZ
+
+	TAD	BUFF
+	JMS	PUTLN
+	JMP I	(MONADR)
+
+/--------------------------------------------------
+/ {{{ GETC
+/ Get a single character from the keyboard and 
+/ return it in AC
+/--------------------------------------------------
+GETC,	0
+	KCF		/ Initialize the keyboard
+	KSF		/ Wait for the input
+	JMP	.-1	/ ... 
+	KRB		/ Read keyboard
+	JMP I	GETC	/ Return }}}
+	
+/-------------------------------------------------------
+/{{{    PUTCZ
+/       Print a single character from the AC
+/	AC is zero on return
+/-------------------------------------------------------
+PUTCZ,	0
+	TSF		/
+	JMP	.-1
+	TLS		/ Print the character in AC
+	CLA		/ Clear AC
+	JMP I	PUTCZ	/}}}
+
+/-------------------------------------------------------
+/{{{    PUTC
+/       Print a single character from the AC
+/-------------------------------------------------------
+PUTC,	0
+	TSF		/
+	JMP	.-1
+	TLS		/ Print the character in AC
+	JMP I	PUTC	/}}}
+		
+/--------------------------------------------------
+/ {{{ GETLN
+/ Expects and address in AC that is Buffer - 1 
+/ Stores one line of text in the buffer and
+/ terminates with a zero.
+/--------------------------------------------------
+GETLN,	0
+	DCA	AI1	/ Put buffer in the autoincrement address
+GLLOOP,	JMS	GETC		/ Get a character 
+	TAD	(-1^CR)		/ Subtract CR
+	SNA	
+	JMP	GLDONE		/ if zero, done, else continue
+	TAD	(CR)		/ Add CR Back	
+	JMS	PUTC
+	DCA I	AI1	/ Save it in the buffer
+	JMP	GLLOOP
+GLDONE,	DCA I	AI1	/ Zero terminate the buffer
+	JMP I	GETLN
+GLTMP,	0
+/}}}
+
+/--------------------------------------------------
+/ {{{ PUTLN
+/ Expects and address in AC that is Buffer - 1 
+/ Stores one line of text in the buffer and
+/ terminates with a zero.
+/--------------------------------------------------
+PUTLN,	0
+	DCA	AI1	/ Put buffer in autoincrement address
+PLLOOP,	TAD I	AI1	/ Get Value from Buffer 	
+	SNA	
+	JMP	PLDONE		/ if zero we are done, else
+	JMS	PUTCZ		/ Print it
+	JMP	PLLOOP		/ And loop
+PLDONE,	TAD	(CR)
+	JMS	PUTCZ
+	JMP I	PUTLN	/ Return
+/}}}
+
+
+BUFF,	*.+IBSIZE	/ Buffer that is IBSIZE characters long
+
