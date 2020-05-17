@@ -1,0 +1,89 @@
+R PIP/I
+FOO.PA<TTY:
+/ In this code, the first word of a buffer is its address so
+/ it can be entered directly into autoincrement addresses
+
+	MONADR=7600
+	BSIZE=20 / Buffer Size
+	CR=0015
+	LF=0012
+
+	*0010
+AI1,	0
+AI2,	0
+
+	*0200
+START,	CLA
+	TLS
+	JMS	STRCPY
+	SRCS
+	BUFF
+
+	CLA
+	TAD     BUFF	
+	JMS	PUTLN
+	JMP I	(MONADR)
+
+/------------------------------------------------------------
+/ {{{ STRCPY
+/	Copies a string from one buffer to another
+/	Usage:
+/		STRCPY
+/		Source Buffer Address
+/		Destination Buffer Address
+/	Returns:
+/		0 in AC
+/------------------------------------------------------------
+STRCPY,	0
+	CLA
+	TAD I 	STRCPY		/Move source to AI1 and increment pointer
+	DCA	AI1
+	ISZ	STRCPY
+	NOP
+	TAD I	STRCPY
+	DCA	AI2
+	ISZ	STRCPY
+	NOP
+
+CLOOP,	TAD I	AI1		/Load character
+	SNA
+	JMP	DONE		/If it's a zero, then done
+	DCA I	AI2		/Othewise, copy it
+	JMP	CLOOP
+DONE,	DCA I	AI2		/zero-terminate the destination
+	JMP I	STRCPY		/And Exit
+/ }}}	
+
+/-------------------------------------------------------
+/{{{    PUTCZ
+/       Print a single character from the AC
+/	AC is zero on return
+/-------------------------------------------------------
+PUTCZ,	0
+	TSF		/
+	JMP	.-1
+	TLS		/ Print the character in AC
+	CLA		/ Clear AC
+	JMP I	PUTCZ	/}}}
+
+/--------------------------------------------------
+/ {{{ PUTLN
+/ Expects and address in AC that is Buffer - 1 
+/ Stores one line of text in the buffer and
+/ terminates with a zero.
+/--------------------------------------------------
+PUTLN,	0
+	DCA	AI1	/ Put buffer in autoincrement address
+PLLOOP,	TAD I	AI1	/ Get Value from Buffer 	
+	SNA	
+	JMP	PLDONE		/ if zero we are done, else
+	JMS	PUTCZ		/ Print it
+	JMP	PLLOOP		/ And loop
+PLDONE,	TAD	(CR)
+	JMS	PUTCZ
+	JMP I	PUTLN	/ Return
+/}}}
+
+SRCS,	.;"T;"e;"s;"t;0
+BUFF,	.;*.+BSIZE	/ Buffers that are BSIZE characters long
+
