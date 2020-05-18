@@ -68,7 +68,7 @@ ATOC,   0
 // Convert the AC to ASCII, Print, clear AC, and restore it
 PROC,   0
         AND     (0007)  /ISOLATE LOW 3 BITS
-        TAD     ("0)	/ADD 260 TO MAKE ASCII
+        TAD     ("0)	/ADD 060 TO MAKE ASCII
 	TSF		/Print it
 	JMP	.-1
 	TLS    
