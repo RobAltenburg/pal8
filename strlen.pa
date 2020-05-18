@@ -1,0 +1,79 @@
+R PIP/I
+FOO.PA<TTY:
+/ In this code, the first word of a buffer is its address so
+/ it can be entered directly into autoincrement addresses
+
+	MONADR=7600
+	BSIZE=20 / Buffer Size
+	CR=0015
+	LF=0012
+
+	*0010
+AI1,	0
+
+	*0200
+START,	CLA
+	TLS
+	TAD	SRCS
+	JMS	STRLN
+	JMS	ATOC
+	JMP I	(MONADR)
+
+/------------------------------------------------------------
+/ {{{ STRLN
+/	Returns the length of a string
+/	Usage:
+/		Buffer Address in AC
+/		STRLN
+/	Returns:
+/		String length in AC
+/------------------------------------------------------------
+STRLN,	0
+	DCA	AI1
+	DCA	COUNT
+LOOP,	CLA	
+	TAD I	AI1		/Load character
+	SNA
+	JMP	DONE		/If it's a zero, then done
+	ISZ	COUNT
+	NOP
+	JMP	LOOP
+DONE,	CLA	
+	TAD	COUNT	
+	JMP I	STRLN		/And Exit
+COUNT,	0
+/ }}}	
+
+/-------------------------------------------------------
+/	ACCUMULATOR TO ASCII {{{
+/	Prints the AC, and sets AC to zero on return
+/-------------------------------------------------------
+ATOC,   0
+        DCA     VAR     /MOVE AC TO VAR
+        TAD     VAR     /RESTORE THE AC
+        RTL; RTL        /HIGH 3 BITS NOW LOW 3
+        JMS     PROC    /PROCESS THE LOW 3
+        BSW             /NEXT 3 TO LOW 3
+        JMS     PROC	/PROCESS IT
+        RTR; RAR        /NEXT 3
+        JMS     PROC	/PROCESS IT
+        JMS     PROC    /FINAL LOW 3
+        CLA	        /CLEAR AC AND LINK
+        JMP I	ATOC	/RETURN
+
+// Convert the AC to ASCII, Print, clear AC, and restore it
+PROC,   0
+        AND     (0007)  /ISOLATE LOW 3 BITS
+        TAD     ("0)	/ADD 260 TO MAKE ASCII
+	TSF		/Print it
+	JMP	.-1
+	TLS    
+	CLA
+        TAD	VAR	/RESTORE AC
+        JMP I	PROC	/RETURN
+
+VAR,    0		/TEMP VAR TO HOLD AC
+/ }}}
+
+SRCS,	.;"T;"e;"s;"t;"i;"n;"g;0
+
