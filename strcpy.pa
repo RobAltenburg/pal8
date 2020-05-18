@@ -15,7 +15,8 @@ AI2,	0
 	*0200
 START,	CLA
 	TLS
-	JMS	STRCPY
+	TAD	(0002)
+	JMS	STNCPY
 	SRCS
 	BUFF
 
@@ -53,6 +54,42 @@ CLOOP,	TAD I	AI1		/Load character
 DONE,	DCA I	AI2		/zero-terminate the destination
 	JMP I	STRCPY		/And Exit
 / }}}	
+
+/------------------------------------------------------------
+/ {{{ STNCPY
+/	Copies a number of characters in a string from one 
+/	buffer to another.
+/	Usage:
+/		AC contains the number of characters to copy
+/		STNCPY
+/		Source Buffer Address
+/		Destination Buffer Address
+/	Returns:
+/		0 in AC
+/------------------------------------------------------------
+STNCPY,	0
+	CIA			/Negate AC
+	DCA	COUNT	
+	TAD I 	STNCPY		/Move source to AI1 and increment pointer
+	DCA	AI1
+	ISZ	STNCPY
+	NOP
+	TAD I	STNCPY
+	DCA	AI2
+	ISZ	STNCPY
+	NOP
+
+NLOOP,	TAD I	AI1		/Load character
+	SNA
+	JMP	NDONE		/If it's a zero, then done
+	DCA I	AI2		/Othewise, copy it
+	ISZ	COUNT		/ Unless counter is zero
+	JMP	NLOOP		/ loop
+NDONE,	DCA I	AI2		/zero-terminate the destination
+	JMP I	STNCPY		/And Exit
+COUNT,	0
+/ }}}	
+
 
 /-------------------------------------------------------
 /{{{    PUTCZ
