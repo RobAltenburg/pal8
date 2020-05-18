@@ -1,0 +1,92 @@
+R PIP/I
+FOO.PA<TTY:
+/ In this code, the first word of a buffer is its address so
+/ it can be entered directly into autoincrement addresses
+
+	MONADR=7600
+	BSIZE=20 / Buffer Size
+	CR=0015
+	LF=0012
+
+	*0010
+AI1,	0
+AI2,	0
+
+	*0200
+START,	CLA
+	TLS
+	JMS	STRCMP
+	STR1
+	STR2
+	
+	JMS ATOC
+	JMP I	(MONADR)
+
+/------------------------------------------------------------
+/ {{{ STRCMP
+/	Compare two strings
+/	Usage:
+/		STRCMP
+/		ASCIIZ String 1
+/		ASCIIZ String 2
+/	Returns:
+/		0 in AC if strings match
+/		Otherwise non-zero AC
+/------------------------------------------------------------
+STRCMP,	0
+	CLA
+	TAD I 	STRCMP		/Move source to AI1 and increment pointer
+	DCA	AI1
+	ISZ	STRCMP
+	NOP
+	TAD I	STRCMP
+	DCA	AI2
+	ISZ	STRCMP
+	NOP
+
+CLOOP,	TAD I	AI1		/Load character from string 1
+	SNA
+	JMP	DONE		/If it's a zero, then done
+	CIA			/Otherwise negate it...
+	TAD I	AI2		/and add character from string 2
+	SZA			/if non-zero...
+	JMP I	STRCMP		/exit with non-zero value
+	JMP	CLOOP		/test next character
+DONE,	TAD I	AI2		/Add the next character
+	JMP I	STRCMP		/And return
+/ }}}	
+
+/-------------------------------------------------------
+/	ACCUMULATOR TO ASCII {{{
+/	Prints the AC, and sets AC to zero on return
+/-------------------------------------------------------
+ATOC,   0
+        DCA     VAR     /MOVE AC TO VAR
+        TAD     VAR     /RESTORE THE AC
+        RTL; RTL        /HIGH 3 BITS NOW LOW 3
+        JMS     PROC    /PROCESS THE LOW 3
+        BSW             /NEXT 3 TO LOW 3
+        JMS     PROC	/PROCESS IT
+        RTR; RAR        /NEXT 3
+        JMS     PROC	/PROCESS IT
+        JMS     PROC    /FINAL LOW 3
+        CLA	        /CLEAR AC AND LINK
+        JMP I	ATOC	/RETURN
+
+// Convert the AC to ASCII, Print, clear AC, and restore it
+PROC,   0
+        AND     (0007)  /ISOLATE LOW 3 BITS
+        TAD     ("0)	/ADD 60 TO MAKE ASCII
+	TSF		/Print it
+	JMP	.-1
+	TLS    
+	CLA
+        TAD	VAR	/RESTORE AC
+        JMP I	PROC	/RETURN
+
+VAR,    0		/TEMP VAR TO HOLD AC
+/ }}}
+
+STR1,	.;"T;"e;"s;"t;0
+STR2,	.;"T;"e;"s;"t;" ;0
+
